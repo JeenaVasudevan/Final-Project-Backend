@@ -10,8 +10,10 @@ const port = 3000
 connectDB();
 
 app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true
+  origin:["http://localhost:5173","https://final-project-frontend-lsne.vercel.app"],
+  credentials:true,
+  methods:["GET","POST","PUT","DELETE","OPTIONS"]
+
 }));
 app.use(express.json())
 app.use(cookieParser())
