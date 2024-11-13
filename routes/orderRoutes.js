@@ -3,7 +3,8 @@ import {
     createOrder,
     fetchOrderDetails,
     updateOrderStatus,
-    deleteOrder
+    deleteOrder,
+    fetchUserOrders
 } from "../controllers/orderControllers.js";
 import { authUser } from "../middleware/authUser.js";
 import { isUser } from "../middleware/isUser.js";
@@ -11,6 +12,8 @@ import { authAdmin } from "../middleware/authAdmin.js";
 import { isAdmin } from "../middleware/isAdmin.js";
 
 const router = express.Router();
+
+router.get("/", authUser, isUser, fetchUserOrders)
 
 router.post("/create",authUser,isUser,createOrder);
 

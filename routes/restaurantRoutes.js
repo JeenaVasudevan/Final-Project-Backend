@@ -4,9 +4,9 @@ import { authAdmin } from "../middleware/authAdmin.js";
 import { isAdmin } from "../middleware/isAdmin.js";
 const router=express.Router()
 
-router.get("/all-restaurants",authAdmin,isAdmin,findAllRestaurants);
+router.get("/all-restaurants",findAllRestaurants);
 
-router.get("/restaurantDetails/:id",authAdmin,isAdmin,fetchRestaurantDetails);
+router.get("/restaurantDetails/:id",fetchRestaurantDetails);
 
 router.post("/create", authAdmin,isAdmin, createRestaurant);
 

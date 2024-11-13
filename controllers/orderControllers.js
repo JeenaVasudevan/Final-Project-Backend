@@ -128,3 +128,15 @@ export const deleteOrder = async (req, res, next) => {
         next(error);
     }
 };
+export const fetchUserOrders = async (req, res) => {
+    try {
+      // Fetch orders for the logged-in user
+      const userOrders = await Order.find({ user: req.user.id });
+  
+      // Send the response with orders
+      res.json({ message: "Orders fetched successfully", data: userOrders });
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  };

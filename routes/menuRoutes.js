@@ -11,8 +11,8 @@ router.get("/menuDetails/:id", fetchMenuDetails);
 
 router.post("/create", authAdmin, isAdmin, createMenu);
 
-router.put("/update/:id", authAdmin, isAdmin, updateMenu);
+router.put("/update/:menuId", authAdmin, isAdmin, updateMenu);
 
-router.delete("/delete/:id", authAdmin, isAdmin, deleteMenu);
+router.delete("/delete/:menuId", authAdmin, isAdmin, deleteMenu);
 
 export { router as menuRouter };

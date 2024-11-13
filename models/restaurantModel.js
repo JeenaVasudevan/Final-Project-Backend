@@ -18,6 +18,7 @@ const restaurantSchema = new mongoose.Schema(
     cuisine: {
       type: String,
       required: true,
+      default:"various"
     },
     menuItems: [{ 
       type: mongoose.Schema.Types.ObjectId, 
