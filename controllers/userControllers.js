@@ -38,7 +38,6 @@ export const signup = async (req, res, next) => {
     }
 };
 
-
 export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -62,7 +61,16 @@ export const login = async (req, res, next) => {
             secure: true,
             httpOnly: true
         });
-        res.status(200).json({ success: true, message: "Login successful" });
+        res.status(200).json({ 
+            success: true, 
+            message: "Login successful", 
+            user:{
+            id:userExist._id,
+            email:userExist.email,
+            role:userExist.role,
+            },token,
+            redirectUrl: userExist.role === "admin" ? "/admin/profile" : "/user/profile" 
+        });
     } catch (error) {
         next(error);
     }

@@ -62,7 +62,13 @@ export const login = async (req, res, next) => {
             secure: true,
             httpOnly: true
         });
-        res.status(200).json({ success: true, message: "Admin login successful",redirectUrl: "/admin" });
+        res.status(200).json({ 
+            success: true,
+             message: "Admin login successful",
+             redirectUrl: "/admin/profile",
+            role:'admin',
+            token:token
+            });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, error: "Internal server error" });
