@@ -10,9 +10,9 @@ const port = 3000;
 connectDB();
 app.use(express.json());
 app.use(cors({
-  origin: ["http://localhost:5173", "https://final-project-frontend-kfla.vercel.app"],
+  origin: ["http://localhost:5173", "https://final-project-frontend-kfla-kreod020f-jeenas-projects.vercel.app"],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  methods: ["GET", "POST", "PUT", "DELETE"]
 }));
 app.use(cookieParser());
 app.use("/api", apiRouter);
