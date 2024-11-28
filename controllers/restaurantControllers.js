@@ -5,8 +5,8 @@ import { Admin } from "../models/adminModel.js";
 export const createRestaurant = async (req, res, next) => {
     try {
         const { user } = req;
-        const { name, address, contactNumber, cuisine, image } = req.body;
-        if (!name || !address || !contactNumber || !cuisine ||!image) {
+        const { name, address, contactNumber, cuisine, image,rating} = req.body;
+        if (!name || !address || !contactNumber || !cuisine ||!image|| rating === undefined) {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
         const newRestaurant = new Restaurant({
@@ -15,6 +15,7 @@ export const createRestaurant = async (req, res, next) => {
             contactNumber,
             cuisine,
             image,
+            rating,
             admin: user.id, 
         });
 
@@ -67,7 +68,7 @@ export const fetchRestaurantDetails = async (req, res, next) => {
 export const updateRestaurant = async (req, res, next) => {
     try {
         const restaurantId = req.params.id;
-        const { name, address, contactNumber, cuisine, image } = req.body;
+        const { name, address, contactNumber, cuisine, image,rating } = req.body;
         const { user } = req;
         if (!restaurantId) {
             return res.status(400).json({ success: false, message: "Restaurant ID not found in request" });
@@ -81,6 +82,7 @@ export const updateRestaurant = async (req, res, next) => {
         restaurant.contactNumber = contactNumber || restaurant.contactNumber;
         restaurant.cuisine = cuisine || restaurant.cuisine;
         restaurant.image= image || restaurant.image
+        restaurant.rating = rating !== undefined ? rating : restaurant.rating;
         await restaurant.save();
         const token = generateToken(user.id, user.role); 
         res.cookie("token", token, {
@@ -113,7 +115,7 @@ export const deleteRestaurant = async (req, res, next) => {
             secure: true,
             httpOnly: true,
         });
-        res.json({ success: true, message: "Restaurant deleted successfully" });
+        res.json({ success: true, message: "Restaurant deleted successfully" ,token});
     } catch (error) {
         console.log(error);
         res.status(error.statusCode || 500).json({ success: false, message: error.message || "Internal server error" });

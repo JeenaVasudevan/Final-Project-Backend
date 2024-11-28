@@ -20,6 +20,10 @@ const restaurantSchema = new mongoose.Schema(
       required: true,
       default:"various"
     },
+    image: {
+      type: String,
+      default: "https://png.pngtree.com/thumb_back/fh260/background/20230618/pngtree-illustration-of-a-cartoon-style-phone-with-food-and-order-button-image_3639505.jpg",
+    },
     menuItems: [{ 
       type: mongoose.Schema.Types.ObjectId, 
       ref: "Menu" 

@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/all-menus", findAllMenus);
 
-router.get("/menuDetails/:id", fetchMenuDetails);
+router.get("/menuDetails/:menuId", fetchMenuDetails);
 
 router.post("/create", authAdmin, isAdmin, createMenu);
 

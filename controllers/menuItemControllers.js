@@ -50,7 +50,7 @@ export const findAllMenus = async (req, res, next) => {
 };
 export const fetchMenuDetails = async (req, res, next) => {
     try {
-        const menuId = req.params.id;
+        const menuId = req.params.menuId;
 
         if (!menuId) {
             return res.status(400).json({ success: false, message: "Menu ID not found in request" });
@@ -72,7 +72,7 @@ export const fetchMenuDetails = async (req, res, next) => {
 // Update a menu item
 export const updateMenu = async (req, res, next) => {
     try {
-        const menuId = req.params.id;
+        const menuId = req.params.menuId;
         const { user } = req;
         const { name, description, price, image, category } = req.body;
 
@@ -111,7 +111,7 @@ export const updateMenu = async (req, res, next) => {
 // Delete a menu item
 export const deleteMenu = async (req, res, next) => {
     try {
-        const menuId = req.params.id;
+        const menuId = req.params.menuId;
         const { user } = req;
 
         if (!menuId) {

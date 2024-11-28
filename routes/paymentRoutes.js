@@ -1,8 +1,11 @@
 import express from "express";
 import Stripe from "stripe";
+import { Order } from "../models/orderModel.js";
+
+
 const router = express.Router();
-const stripe=new Stripe(process.env.stripe_secret_key)
-const client_domain=process.env.CLIENT_DOMAIN
+const stripe = new Stripe(process.env.stripe_secret_key);
+const client_domain = process.env.CLIENT_DOMAIN;
 
 router.post("/create-checkout-session", async (req, res) => {
   try {
@@ -27,8 +30,8 @@ router.post("/create-checkout-session", async (req, res) => {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${client_domain}/user/payment/success`,
-      cancel_url: `${client_domain}/cart`,
+      success_url: `${client_domain}/payment/success`,
+      cancel_url: `${client_domain}/payment/cancel`,
     });
 
     res.json({ success: true, sessionId: session.id });
@@ -38,64 +41,97 @@ router.post("/create-checkout-session", async (req, res) => {
   }
 });
 
-router.get("/session-status",async(req,res)=>{
-  try{
-    const sessionId=req.query.session_id
-    const session=await stripe.checkout.session.retrieve(sessionId)
-    res.send({status:session?.status,
-    customer_email:session?.customer_details?.email
-    })
-  }catch(error){
-    res.status(error?.statusCode||500).json(error.message||"Internal error")
-  }
-})
-
-router.post("/success", async (req, res, next) => {
+router.get("/session-status", async (req, res) => {
   try {
-    const { sessionId } = req.body; // Received sessionId from frontend after payment
+    const sessionId = req.query.session_id;
     if (!sessionId) {
-      return res.status(400).json({ message: "Invalid session ID" });
+      return res.status(400).json({ message: "Session ID is required" });
     }
 
-    // Fetch session details from Stripe to verify the session and include line items
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['line_items']
+      expand: ["line_items"],
     });
 
-    if (!session) {
-      return res.status(404).json({ message: "Session not found" });
+    // Fetch order details
+    const order = await Order.findOne({ sessionId }).populate("deliveryAddress");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    // Extract cart items (line_items) from the session
-    const cartItems = session.line_items.data.map(item => ({
+    const lineItems = session.line_items.data.map((item) => ({
       name: item.description,
       quantity: item.quantity,
-      price: item.amount_total / 100,
+      price: item.amount_total / 100, // Convert to INR
     }));
 
-    // Create a new order in the database (with sessionId, cart items, user, etc.)
-    const order = new Order({
-      user: req.user.id,  // Assuming user info is attached to the session
-      items: cartItems,
-      totalAmount: session.amount_total / 100,  // Convert amount to actual currency
-      orderStatus: 'Pending',  // Status for new order
-      paymentStatus: 'Success',
-      sessionId: session.id,  // Store the sessionId as order ID
+    res.json({
+      orderId: order._id,
+      totalAmount: session.amount_total / 100, // Convert to INR
+      items: lineItems,
+      deliveryAddress: `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.state} - ${order.deliveryAddress.zipCode}`,
+      status: session.payment_status,
     });
-
-    await order.save();  // Save the order to your DB
-
-    // Clear the cart after payment success
-    await Cart.deleteMany({ user: req.user.id });  // Clear the user's cart
-
-    res.status(200).json({ message: "Order successfully created", orderId: order._id });
   } catch (error) {
-    console.error("Payment success processing error:", error.message);
-    next(error);  // Pass the error to the next middleware for centralized handling
+    console.error("Error retrieving session status:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  const signature = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error(`Webhook Error: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    // Process session data and update order/payment status in the database
+  }
+
+  res.status(200).json({ received: true });
+});
+
+router.get("/checkout-complete", async (req, res) => {
+  const sessionId = req.query.session_id;
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status === "paid") {
+      res.redirect(`https://final-project-frontend-j3if.vercel.app/payment/success?session_id=${sessionId}`);
+    } else {
+      res.redirect(`https://final-project-frontend-j3if.vercel.app/payment/failed`);
+    }
+  } catch (error) {
+    console.error("Error handling checkout complete:", error);
+    res.status(500).send("Error confirming payment.");
   }
 });
 
 
+router.get("/success", async (req, res) => {
+  const sessionId = req.query.session_id; // Retrieve session_id from query params
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status === "paid") {
+      res.json({ success: true, session }); // Return JSON to the frontend
+    } else {
+      res.json({ success: false });
+    }
+  } catch (err) {
+    console.error("Error retrieving session:", err);
+    res.status(500).json({ error: "Failed to confirm payment." });
+  }
+});
 
-  
-export {router as paymentRouter}
+
+export { router as paymentRouter };
