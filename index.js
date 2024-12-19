@@ -9,6 +9,7 @@ const port = 3000;
 
 connectDB();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: ["http://localhost:5173", "https://final-project-frontend-j3if.vercel.app"],
   credentials: true,

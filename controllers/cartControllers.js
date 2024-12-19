@@ -5,6 +5,7 @@ export const addToCart = async (req, res, next) => {
     try {
         const { user } = req;
         const { menuItem, quantity } = req.body;
+        console.log(req.body)
         if (!menuItem) {
             return res.status(400).json({ success: false, message: "Menu item ID is required" });
         }

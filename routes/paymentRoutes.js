@@ -1,8 +1,7 @@
 import express from "express";
 import Stripe from "stripe";
 import { Order } from "../models/orderModel.js";
-import { User } from "../models/userModel.js";
-import { Cart } from "../models/cartModel.js";
+
 
 const router = express.Router();
 const stripe = new Stripe(process.env.stripe_secret_key);
@@ -12,9 +11,14 @@ const client_domain = process.env.CLIENT_DOMAIN;
 router.post("/create-checkout-session", async (req, res) => {
   try {
     const { cart, userId, deliveryAddress } = req.body;
+    console.log("Received request body:", req.body);
+
     if (!cart || !Array.isArray(cart.items) || cart.items.length === 0) {
       return res.status(400).json({ message: "Invalid cart data" });
     }
+    console.log("Received cart data:", cart);
+console.log("User ID:", userId);
+console.log("Delivery Address:", deliveryAddress);
 
     const lineItems = cart.items.map((cartItem) => ({
       price_data: {
@@ -27,6 +31,8 @@ router.post("/create-checkout-session", async (req, res) => {
       },
       quantity: cartItem.quantity,
     }));
+    
+    console.log("Line Items for Stripe:", lineItems);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -35,10 +41,12 @@ router.post("/create-checkout-session", async (req, res) => {
       success_url: `${client_domain}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${client_domain}/payment/cancel`,
       metadata: {
-        userId,
-        deliveryAddress: JSON.stringify(deliveryAddress),
+        userId:userId || "Unknown User",
+        deliveryAddress: deliveryAddress? JSON.stringify(deliveryAddress):"No address provided",
       },
     });
+
+    console.log("Created Stripe Session:", session);
 
     res.json({ success: true, sessionId: session.id });
   } catch (error) {
@@ -48,6 +56,7 @@ router.post("/create-checkout-session", async (req, res) => {
       .json({ message: error.message || "Internal server error" });
   }
 });
+
 
 // Stripe Webhook for handling Checkout Session completion
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
@@ -60,6 +69,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+    console.log("Stripe Event Received:", event);
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -67,13 +77,15 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
+    console.log("Checkout Session Completed:", session);
+
     const { userId, deliveryAddress } = session.metadata;
+    console.log("User ID:", userId);
+    console.log("Delivery Address Metadata:", deliveryAddress);
 
     try {
-      const user = await User.findById(userId);
-      if (!user) throw new Error(`User with ID ${userId} not found`);
-
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+      console.log("Line Items from Stripe:", lineItems);
 
       const orderItems = lineItems.data.map((item) => ({
         name: item.description,
@@ -82,8 +94,10 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
         productId: item.price.id,
       }));
 
+      console.log("Order Items Processed:", orderItems);
+
       const newOrder = new Order({
-        userId: user._id,
+        userId,
         items: orderItems,
         totalAmount: session.amount_total / 100,
         deliveryAddress: JSON.parse(deliveryAddress),
@@ -92,14 +106,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       });
 
       await newOrder.save();
-
-      user.orders.push(newOrder._id);
-      await user.save();
-
-      await Cart.deleteMany({ userId });
-
-      console.log(`Order created for user: ${userId}`);
-      return res.json({ received: true });
+      console.log("New Order Saved:", newOrder);
     } catch (error) {
       console.error("Error processing webhook:", error.message);
       return res.status(500).send("Error processing payment.");
@@ -109,23 +116,20 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
   res.status(200).send("Webhook received.");
 });
 
+
 // Route to get session status
 router.get("/session-status", async (req, res) => {
   try {
     const sessionId = req.query.session_id;
-    if (!sessionId) {
-      return res.status(400).json({ message: "Session ID is required" });
-    }
+    console.log("Session ID:", sessionId);
 
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["line_items"],
     });
+    console.log("Retrieved Session Details:", session);
 
     const order = await Order.findOne({ sessionId });
-
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+    console.log("Order Details:", order);
 
     res.json({
       orderId: order._id,
@@ -144,15 +148,21 @@ router.get("/session-status", async (req, res) => {
   }
 });
 
+
 // Route to handle successful payment redirection
 router.get("/checkout-complete", async (req, res) => {
   const sessionId = req.query.session_id;
+  console.log("Session ID for completion:", sessionId);
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log("Checkout Session Details:", session);
+
     if (session.payment_status === "paid") {
+      console.log("Payment Successful for Session:", sessionId);
       res.redirect(`http://localhost:5173/payment/success?session_id=${sessionId}`);
     } else {
+      console.log("Payment Failed for Session:", sessionId);
       res.redirect(`http://localhost:5173/payment/failed`);
     }
   } catch (error) {
@@ -160,6 +170,7 @@ router.get("/checkout-complete", async (req, res) => {
     res.status(500).send("Error confirming payment.");
   }
 });
+
 
 // Route to confirm payment success
 router.get("/success", async (req, res) => {

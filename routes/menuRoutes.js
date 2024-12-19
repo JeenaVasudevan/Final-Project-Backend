@@ -1,7 +1,7 @@
 import express from "express";
 import { createMenu,deleteMenu,fetchMenuDetails,findAllMenus, updateMenu} from "../controllers/menuItemControllers.js";
 import { authAdmin } from "../middleware/authAdmin.js";
-import { isAdmin } from "../middleware/isAdmin.js";
+
 
 const router = express.Router();
 
@@ -9,10 +9,10 @@ router.get("/all-menus", findAllMenus);
 
 router.get("/menuDetails/:menuId", fetchMenuDetails);
 
-router.post("/create", authAdmin, isAdmin, createMenu);
+router.post("/create", authAdmin,createMenu);
 
-router.put("/update/:menuId", authAdmin, isAdmin, updateMenu);
+router.put("/update/:menuId", authAdmin,updateMenu);
 
-router.delete("/delete/:menuId", authAdmin, isAdmin, deleteMenu);
+router.delete("/delete/:menuId", authAdmin,deleteMenu);
 
 export { router as menuRouter };

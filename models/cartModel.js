@@ -9,19 +9,25 @@ const cartSchema = new mongoose.Schema(
     },
     items: [
       {
-        menuItem: { type: mongoose.Schema.Types.ObjectId, ref: "Menu", required: true },
-        quantity: { type: Number, default: 1, min: 1 },
+        menuItem: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Menu",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
       },
     ],
     totalPrice: {
       type: Number,
       required: true,
-      min: 0,
-      default: 0,
     },
   },
   { timestamps: true }
 );
+
 cartSchema.methods.calculateTotalPrice = async function () {
   const populatedCart = await this.populate('items.menuItem');
   this.totalPrice = populatedCart.items.reduce((total, item) => {

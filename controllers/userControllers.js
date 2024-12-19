@@ -1,6 +1,7 @@
 import { User } from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../utilities/token.js";
+import jwt from "jsonwebtoken";
 
 export const signup = async (req, res, next) => {
     try {
@@ -155,17 +156,43 @@ export const deleteProfile = async (req, res, next) => {
     }
 };
 
-export const checkUser = async (req, res, next) => {
+
+
+export const checkUser = async (req, res) => {
     try {
-        res.json({
+        const { token } = req.cookies;
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Token missing",
+            });
+        }
+
+        // Verify the token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+        if (!decoded || decoded.role !== "user") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied: Not an authorized user",
+            });
+        }
+
+        // Return success response with user details
+        res.status(200).json({
             success: true,
-            message:"Authorized user"
+            message: "Authorized user",
+            data: {
+                id: decoded.id,
+                role: decoded.role,
+            },
         });
     } catch (error) {
-        console.log(error);
-        res.status(error.statusCode || 500).json({
+        console.error("Error in checkUser:", error);
+        res.status(500).json({
             success: false,
-            message: error.message || "Internal server error"
+            message: error.message || "Internal server error",
         });
     }
 };

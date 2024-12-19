@@ -7,20 +7,18 @@ import {
     fetchUserOrders
 } from "../controllers/orderControllers.js";
 import { authUser } from "../middleware/authUser.js";
-import { isUser } from "../middleware/isUser.js";
-import { authAdmin } from "../middleware/authAdmin.js";
-import { isAdmin } from "../middleware/isAdmin.js";
+
 
 const router = express.Router();
 
-router.get("/", authUser, isUser, fetchUserOrders)
+router.get("/", authUser,fetchUserOrders)
 
-router.post("/create",authUser,isUser,createOrder);
+router.post("/create",authUser,createOrder);
 
-router.get("/orderDetails/:id",authAdmin,isAdmin,fetchOrderDetails);
+router.get("/orderDetails/:id",authUser,fetchOrderDetails);
 
-router.put("/update/:id",authUser,isUser,updateOrderStatus);
+router.put("/update/:id",authUser,updateOrderStatus);
 
-router.delete("/delete/:id",authUser,isUser,deleteOrder);
+router.delete("/delete/:id",authUser,deleteOrder);
 
 export { router as orderRouter };

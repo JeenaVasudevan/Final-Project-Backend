@@ -14,19 +14,25 @@ const orderSchema = new mongoose.Schema(
     },
     items: [
       {
-        menuItem: { type: mongoose.Schema.Types.ObjectId, ref: "Menu", required: true },
-        quantity: { type: Number, default: 1, min: 1 },
+        menuItem: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Menu",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
       },
     ],
-    totalAmount: {
+    totalPrice: {
       type: Number,
       required: true,
-      min: 0,
     },
     status: {
       type: String,
-      enum: ['Pending', 'Completed', 'Cancelled'],
-      default: "pending",
+      enum: ["Pending", "Completed", "Cancelled"],
+      default: "Pending",
     },
     deliveryAddress: {
       type: String,
@@ -35,5 +41,6 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
 
 export const Order = mongoose.model("Order", orderSchema);

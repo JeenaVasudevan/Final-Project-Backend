@@ -7,18 +7,18 @@ import {
     clearCart
 } from "../controllers/cartControllers.js";
 import { authUser } from "../middleware/authUser.js";
-import { isUser } from "../middleware/isUser.js";
+
 
 
 const router = express.Router();
 
-router.post("/add",authUser,isUser,addToCart);
+router.post("/add",authUser,addToCart);
 
-router.get("/fetch",authUser,isUser,fetchCart);
+router.get("/fetch",authUser,fetchCart);
 
-router.put("/update/:id",authUser,isUser,updateCartItem);
+router.put("/update/:id",authUser,updateCartItem);
 
-router.delete("/delete/:id",authUser,isUser,deleteCartItem);
+router.delete("/delete/:id",authUser,deleteCartItem);
 
 router.put('/clear', authUser, clearCart);
 

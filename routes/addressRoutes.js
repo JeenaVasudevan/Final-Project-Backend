@@ -4,12 +4,11 @@ import {
   fetchUserAddress
 } from "../controllers/addressControllers.js"; 
 import { authUser } from "../middleware/authUser.js"; 
-import { isUser } from "../middleware/isUser.js"; 
 
 const router = express.Router();
 
-router.post("/address", authUser, isUser, addOrUpdateAddress);
+router.post("/address", authUser,addOrUpdateAddress);
 
-router.get("/address", authUser, isUser, fetchUserAddress);
+router.get("/address", authUser,fetchUserAddress);
 
 export { router as addressRouter };
